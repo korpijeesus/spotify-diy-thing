@@ -2,6 +2,12 @@
 
 #include "touchScreen.h"
 
+#include "FreeFonts.h"
+
+// NTP stuff for showing time and date
+#include "time.h"
+#include "sntp.h"
+
 #include <TFT_eSPI.h>
 // A library for checking if the reset button has been pressed twice
 // Can be used to enable config mode
@@ -19,6 +25,24 @@
 // I can't easily pass member functions in as callbacks for jpegdec
 
 // -------------------------------
+// Use Adafruit FreeFont
+#define GFXFF 1
+// Define NTP Client to get time
+const char* ntpServer1 = "pool.ntp.org";
+const char* ntpServer2 = "time.nist.gov";
+const long  gmtOffset_sec = 7200;
+const int   daylightOffset_sec = 3600;
+String nptTime = "Wait...";
+String nptDate = "Wait...";
+
+// LDR/Brightness things
+
+#define LDR_PIN 34
+#define TFT_BL_PIN 21
+
+
+unsigned long ldrCheckDue = 0;
+int ldrDelay = 1000; // How often to check the LDR reading in miliseconds (1000 = once a second)
 
 TFT_eSPI tft = TFT_eSPI();
 JPEGDEC jpeg;
@@ -63,15 +87,47 @@ int32_t mySeek(JPEGFILE *handle, int32_t position)
     return 0;
   return myfile.seek(position);
 }
+void printLocalTime()
+{
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("No time available (yet)");
+    return;
+  }
+  String nptMin;
+  if (timeinfo.tm_min < 10)
+  {
+    nptMin = "0"+String(timeinfo.tm_min);
+  } else {
+    nptMin = String(timeinfo.tm_min);
+  }
+  
+  nptTime = String(timeinfo.tm_hour) + ":" + nptMin +" ";
+  nptDate = String(timeinfo.tm_mday) + "." + String(timeinfo.tm_mon+1) + "." + String(timeinfo.tm_year+1900);
+  Serial.println(nptTime);
+  Serial.println(nptDate);
+  //Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+}
 
+// Callback function (get's called when time adjusts via NTP)
+void timeavailable(struct timeval *t)
+{
+  Serial.println("Got time adjustment from NTP!");
+  printLocalTime();
+}
 class CheapYellowDisplay : public SpotifyDisplay
 {
 public:
   void displaySetup(SpotifyArduino *spotifyObj)
   {
 
-    spotify_display = spotifyObj;
+    // Increase read sensitivity
+    analogSetAttenuation(ADC_0db);
+    pinMode(LDR_PIN, INPUT);
 
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2);
+    spotify_display = spotifyObj;
+    
     touchSetup(spotifyObj);
 
     Serial.println("cyd display setup");
@@ -96,7 +152,6 @@ public:
 
   void displayTrackProgress(long progress, long duration)
   {
-
     //  Serial.print("Elapsed time of song (ms): ");
     //  Serial.print(progress);
     //  Serial.print(" of ");
@@ -123,17 +178,39 @@ public:
 
   void printCurrentlyPlayingToScreen(CurrentlyPlaying currentlyPlaying)
   {
-    // Clear the text
+    printLocalTime();
+    tft.fillRect(0, 0, (screenWidth-imageWidth)/2, 75-16, TFT_BLACK);
+    tft.fillRect((screenWidth-imageWidth)/2+imageWidth+1, 0,screenWidth, 75-16, TFT_BLACK);
+    tft.setFreeFont(MF1);
+    tft.drawString(nptTime, 20, 20);
+    tft.drawString(nptDate, (screenWidth-imageWidth)/2+imageWidth+1, 20);
     int textStartY = 150 + 30;
     tft.fillRect(0, textStartY, screenWidth, screenHeight - textStartY, TFT_BLACK);
 
-    tft.drawCentreString(currentlyPlaying.trackName, screenCenterX, textStartY, 2);
-    tft.drawCentreString(currentlyPlaying.artists[0].artistName, screenCenterX, textStartY + 18, 2);
-    tft.drawCentreString(currentlyPlaying.albumName, screenCenterX, textStartY + 36, 2);
+    tft.drawString(currentlyPlaying.trackName, 20, textStartY);
+    tft.drawString(currentlyPlaying.artists[0].artistName, 20, textStartY + 18);
+    tft.drawString(currentlyPlaying.albumName, 20, textStartY + 36);
   }
 
   void checkForInput()
   {
+    if (millis() > updateTimeCD) {
+
+      printLocalTime();
+      tft.fillRect(0, 0, (screenWidth-imageWidth)/2, 75-16, TFT_BLACK);
+      tft.fillRect((screenWidth-imageWidth)/2+imageWidth+1, 0,screenWidth, 75-16, TFT_BLACK);
+      tft.setFreeFont(MF1);
+      tft.drawString(nptTime, 20, 20);
+      tft.drawString(nptDate, (screenWidth-imageWidth)/2+imageWidth+1, 20);
+      updateTimeCD = millis() + updateTimeInterval;
+    }
+    if (millis() > brightnessCD) {
+      int sensorValue = analogRead(LDR_PIN);
+      int brightnessValue = map(sensorValue, 4095, 0, 1, 255);
+      analogWrite(TFT_BL_PIN, brightnessValue);
+
+      brightnessCD = millis() + brightnessInterval;
+    }
     if (millis() > touchScreenCoolDownTime && handleTouched())
     {
       drawTouchButtons(previousTrackStatus, nextTrackStatus);
@@ -242,6 +319,10 @@ public:
 private:
   unsigned long touchScreenCoolDownInterval = 200; // How long after a touch press do we accept another (0.2 seconds). There is also an APi request inbetween
   unsigned long touchScreenCoolDownTime;           // time when cool down has expired
+  unsigned long updateTimeInterval = 5000;           // time when cool down has expired
+  unsigned long updateTimeCD;           // time when cool down has expired
+  unsigned long brightnessInterval = 500;           // time when cool down has expired
+  unsigned long brightnessCD;           // time when cool down has expired
 
   int displayImageUsingFile(char *albumArtUrl)
   {
