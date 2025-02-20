@@ -1,5 +1,7 @@
 # Spotify-Diy-Thing
 
+ORIGINAL BY witnessmenow [ https://github.com/witnessmenow/Spotify-Diy-Thing ]
+
 Something similar to the [Spotify Car Thing](https://carthing.spotify.com/), built with a cheap ESP32 Screen. Connects to your Spotify account and displays your currently playing song with its album art
 
 ![image](https://user-images.githubusercontent.com/1562562/221344692-7dd359d3-2e64-4a09-850b-b619477c5043.png)
