@@ -3,7 +3,9 @@
 #include "touchScreen.h"
 
 #include "FreeFonts.h"
+#include <BleKeyboard.h>
 
+BleKeyboard bleKeyboard;
 // NTP stuff for showing time and date
 #include "time.h"
 #include "sntp.h"
@@ -120,7 +122,7 @@ class CheapYellowDisplay : public SpotifyDisplay
 public:
   void displaySetup(SpotifyArduino *spotifyObj)
   {
-
+    bleKeyboard.begin();
     // Increase read sensitivity
     analogSetAttenuation(ADC_0db);
     pinMode(LDR_PIN, INPUT);
@@ -216,11 +218,15 @@ public:
       drawTouchButtons(previousTrackStatus, nextTrackStatus);
       if (previousTrackStatus)
       {
-        spotify_display->previousTrack();
+        bleKeyboard.write(KEY_MEDIA_PREVIOUS_TRACK);
       }
       else if (nextTrackStatus)
       {
-        spotify_display->nextTrack();
+        bleKeyboard.write(KEY_MEDIA_NEXT_TRACK);
+      }
+      else if (playPauseStatus)
+      {
+        bleKeyboard.write(KEY_MEDIA_PLAY_PAUSE);
       }
       drawTouchButtons(false, false);
       requestDueTime = 0;                                               // Some button has been pressed and acted on, it surely impacts the status so force a refresh

@@ -13,7 +13,7 @@
 
 bool previousTrackStatus = false;
 bool nextTrackStatus = false;
-
+bool playPauseStatus = false;
 //SPIClass mySpi = SPIClass(HSPI);
 //
 //XPT2046_Touchscreen ts(XPT2046_CS, XPT2046_IRQ);  // Param 2 - Touch IRQ Pin - interrupt enabled polling
@@ -49,6 +49,10 @@ bool handleTouched() {
       return true;
     } else if (p.x > 200) {
       nextTrackStatus = true;
+      //spotify_touch->nextTrack();
+      return true;
+    } else if (120 < p.x < 200) {
+      playPauseStatus = true;
       //spotify_touch->nextTrack();
       return true;
     }

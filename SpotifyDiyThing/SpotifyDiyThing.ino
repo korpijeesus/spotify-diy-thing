@@ -25,7 +25,6 @@
 #define YELLOW_DISPLAY // Default to Yellow Display for display type
 #endif
 
-#define NFC_ENABLED 1
 
 // This causes issues in certain circumstances e.g. Play an album and let it auto play to related songs
 bool writeContextToNfc = true;
@@ -110,9 +109,6 @@ SpotifyDisplay *spotifyDisplay = &matrixDisplay;
 #endif
 // ----------------------------
 
-#ifdef NFC_ENABLED
-#include "nfc.h"
-#endif
 
 void drawWifiManagerMessage(WiFiManager *myWiFiManager)
 {
@@ -134,16 +130,6 @@ void setup()
 
   spotifyDisplay->displaySetup(&spotify);
 
-#ifdef NFC_ENABLED
-  if (nfcSetup(&spotify, spotifyDisplay))
-  {
-    Serial.println("NFC Good");
-  }
-  else
-  {
-    Serial.println("NFC Bad");
-  }
-#endif
 
   // Initialise SPIFFS, if this fails try .begin(true)
   // NOTE: I believe this formats it though it will erase everything on
@@ -215,17 +201,7 @@ void loop()
 
   bool forceUpdate = false;
 
-#ifdef NFC_ENABLED
-  if (writeContextToNfc)
-  {
-    forceUpdate = nfcLoop(lastTrackUri, lastTrackContextUri);
-  }
-  else
-  {
-    forceUpdate = nfcLoop(lastTrackUri);
-  }
 
-#endif
 
   updateCurrentlyPlaying(forceUpdate);
 
