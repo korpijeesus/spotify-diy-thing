@@ -1,10 +1,12 @@
 # Spotify-Diy-Thing
 
 ORIGINAL BY witnessmenow [ https://github.com/witnessmenow/Spotify-Diy-Thing ]
+
 Same thing, but some small improvements to work better with my situation.
 Nordic characters, display dimming (wait was that in the original?), removed some stuff like NFC since its not really needed here.
 
 Nordic characters can be activated by using "MyFont.h" Somewhere, I think I wrote it somewhere?
+>missing font, slap this into the customfonts folder
 
 0% Artificial Intelligence, 100% Genuine Stupidity
 
