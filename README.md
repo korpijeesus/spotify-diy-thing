@@ -1,6 +1,12 @@
 # Spotify-Diy-Thing
 
 ORIGINAL BY witnessmenow [ https://github.com/witnessmenow/Spotify-Diy-Thing ]
+Same thing, but some small improvements to work better with my situation.
+Nordic characters, display dimming (wait was that in the original?), removed some stuff like NFC since its not really needed here.
+
+Nordic characters can be activated by using "MyFont.h" Somewhere, I think I wrote it somewhere?
+
+0% Artificial Intelligence, 100% Genuine Stupidity
 
 Something similar to the [Spotify Car Thing](https://carthing.spotify.com/), built with a cheap ESP32 Screen. Connects to your Spotify account and displays your currently playing song with its album art
 
